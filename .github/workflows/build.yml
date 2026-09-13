@@ -12,18 +12,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -37,17 +37,31 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Fix Android Build Config
+        run: |
+          sed -i 's/compileSdkVersion = .*/compileSdkVersion = 35/' android/variables.gradle || true
+          sed -i 's/targetSdkVersion = .*/targetSdkVersion = 35/' android/variables.gradle || true
+          sed -i 's/minSdkVersion = .*/minSdkVersion = 22/' android/variables.gradle || true
+          cat android/variables.gradle
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
+
+      - name: Verify APK
+        run: |
+          ls -lh android/app/build/outputs/apk/debug/
+          file android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t android/app/build/outputs/apk/debug/app-debug.apk || true
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dsp-console-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+          compression-level: 0
