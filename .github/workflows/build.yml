@@ -21,16 +21,8 @@ jobs:
       - run: npx cap init "DSP Console" com.dsp.console --web-dir=www
       - run: npx cap add android
       - run: npx cap sync android
-
-      - name: Add Foreground Service Permission
-        run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
-          sed -i 's|<application|<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <application|' $MANIFEST
-          head -30 $MANIFEST
-
       - run: chmod +x android/gradlew
       - run: cd android && ./gradlew assembleDebug --no-daemon
-
       - uses: actions/upload-artifact@v4
         with:
           name: dsp-console-apk
