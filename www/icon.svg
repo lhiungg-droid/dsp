@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2e34"/>
+      <stop offset="50%" stop-color="#1a1c1e"/>
+      <stop offset="100%" stop-color="#0a0b0d"/>
+    </linearGradient>
+    <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4a5058"/>
+      <stop offset="100%" stop-color="#1a1c1e"/>
+    </linearGradient>
+    <linearGradient id="neonGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4090ff"/>
+      <stop offset="50%" stop-color="#4aee6a"/>
+      <stop offset="100%" stop-color="#a060e0"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#80d0ff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square (rack panel) -->
+  <rect x="16" y="16" width="480" height="480" rx="72" ry="72" fill="url(#bgGrad)" stroke="url(#edgeGrad)" stroke-width="6"/>
+
+  <!-- Screw corners (rack panel detail) -->
+  <circle cx="56" cy="56" r="12" fill="#3a3f47" stroke="#0e1013" stroke-width="2"/>
+  <circle cx="456" cy="56" r="12" fill="#3a3f47" stroke="#0e1013" stroke-width="2"/>
+  <circle cx="56" cy="456" r="12" fill="#3a3f47" stroke="#0e1013" stroke-width="2"/>
+  <circle cx="456" cy="456" r="12" fill="#3a3f47" stroke="#0e1013" stroke-width="2"/>
+  <circle cx="56" cy="56" r="4" fill="#6a7078"/>
+  <circle cx="456" cy="56" r="4" fill="#6a7078"/>
+  <circle cx="56" cy="456" r="4" fill="#6a7078"/>
+  <circle cx="456" cy="456" r="4" fill="#6a7078"/>
+
+  <!-- Waveform bars (audio equalizer style) -->
+  <g filter="url(#glow)">
+    <rect x="80"  y="240" width="16" height="32"  rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="112" y="200" width="16" height="112" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="144" y="160" width="16" height="192" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="176" y="120" width="16" height="272" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="208" y="180" width="16" height="152" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="240" y="220" width="16" height="72"  rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="272" y="180" width="16" height="152" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="304" y="120" width="16" height="272" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="336" y="160" width="16" height="192" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="368" y="200" width="16" height="112" rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+    <rect x="400" y="240" width="16" height="32"  rx="4" fill="url(#neonGrad)" opacity="0.9"/>
+  </g>
+
+  <!-- Center circle badge -->
+  <circle cx="256" cy="256" r="90" fill="#0a0b0d" stroke="url(#neonGrad)" stroke-width="4" opacity="0.95"/>
+
+  <!-- Text "DSP" -->
+  <text x="256" y="285" text-anchor="middle"
+        font-family="Arial Black, Arial, sans-serif"
+        font-size="80" font-weight="900"
+        fill="url(#textGrad)"
+        letter-spacing="4"
+        filter="url(#glow)">DSP</text>
+
+  <!-- Small subtitle -->
+  <text x="256" y="320" text-anchor="middle"
+        font-family="Courier New, monospace"
+        font-size="18" font-weight="700"
+        fill="#4aee6a"
+        letter-spacing="6"
+        opacity="0.85">R4</text>
+</svg>
