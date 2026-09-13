@@ -25,8 +25,8 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install ImageMagick (for icon generation)
-        run: sudo apt-get update && sudo apt-get install -y imagemagick librsvg2-bin
+      - name: Install ImageMagick and rsvg
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
 
       - name: Install npm dependencies
         run: npm install
@@ -38,83 +38,7 @@ jobs:
           npx cap sync android
 
       - name: Generate App Icons from SVG
-        run: |
-          # Buat folder kalau belum ada
-          mkdir -p www/icons
-
-          # Generate semua ukuran ikon dari SVG
-          # Sumber: www/icon.svg
-          if [ -f www/icon.svg ]; then
-            echo "SVG logo ditemukan, generating icons..."
-
-            # Master icon 1024x1024
-            rsvg-convert -w 1024 -h 1024 www/icon.svg -o www/icons/icon-1024.png
-
-            # Generate ukuran untuk PWA
-            rsvg-convert -w 512 -h 512 www/icon.svg -o www/icons/icon-512.png
-            rsvg-convert -w 192 -h 192 www/icon.svg -o www/icons/icon-192.png
-            rsvg-convert -w 144 -h 144 www/icon.svg -o www/icons/icon-144.png
-            rsvg-convert -w 96  -h 96  www/icon.svg -o www/icons/icon-96.png
-            rsvg-convert -w 72  -h 72  www/icon.svg -o www/icons/icon-72.png
-
-            # Generate untuk Android mipmap
-            MIPMAP_DIR=android/app/src/main/res
-            mkdir -p $MIPMAP_DIR/mipmap-mdpi
-            mkdir -p $MIPMAP_DIR/mipmap-hdpi
-            mkdir -p $MIPMAP_DIR/mipmap-xhdpi
-            mkdir -p $MIPMAP_DIR/mipmap-xxhdpi
-            mkdir -p $MIPMAP_DIR/mipmap-xxxhdpi
-
-            rsvg-convert -w 48  -h 48  www/icon.svg -o $MIPMAP_DIR/mipmap-mdpi/ic_launcher.png
-            rsvg-convert -w 48  -h 48  www/icon.svg -o $MIPMAP_DIR/mipmap-mdpi/ic_launcher_round.png
-            rsvg-convert -w 72  -h 72  www/icon.svg -o $MIPMAP_DIR/mipmap-hdpi/ic_launcher.png
-            rsvg-convert -w 72  -h 72  www/icon.svg -o $MIPMAP_DIR/mipmap-hdpi/ic_launcher_round.png
-            rsvg-convert -w 96  -h 96  www/icon.svg -o $MIPMAP_DIR/mipmap-xhdpi/ic_launcher.png
-            rsvg-convert -w 96  -h 96  www/icon.svg -o $MIPMAP_DIR/mipmap-xhdpi/ic_launcher_round.png
-            rsvg-convert -w 144 -h 144 www/icon.svg -o $MIPMAP_DIR/mipmap-xxhdpi/ic_launcher.png
-            rsvg-convert -w 144 -h 144 www/icon.svg -o $MIPMAP_DIR/mipmap-xxhdpi/ic_launcher_round.png
-            rsvg-convert -w 192 -h 192 www/icon.svg -o $MIPMAP_DIR/mipmap-xxxhdpi/ic_launcher.png
-            rsvg-convert -w 192 -h 192 www/icon.svg -o $MIPMAP_DIR/mipmap-xxxhdpi/ic_launcher_round.png
-
-            # Adaptive icon (foreground)
-            mkdir -p $MIPMAP_DIR/mipmap-anydpi-v26
-            cat > $MIPMAP_DIR/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
-            cp $MIPMAP_DIR/mipmap-anydpi-v26/ic_launcher.xml $MIPMAP_DIR/mipmap-anydpi-v26/ic_launcher_round.xml
-
-            # Foreground icon untuk adaptive
-            for dpi in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-              case $dpi in
-                mdpi)    SIZE=108;;
-                hdpi)    SIZE=162;;
-                xhdpi)   SIZE=216;;
-                xxhdpi)  SIZE=324;;
-                xxxhdpi) SIZE=432;;
-              esac
-              rsvg-convert -w $SIZE -h $SIZE www/icon.svg -o $MIPMAP_DIR/mipmap-$dpi/ic_launcher_foreground.png
-            done
-
-            # Background color untuk adaptive icon
-            mkdir -p $MIPMAP_DIR/values
-            if ! grep -q "ic_launcher_background" $MIPMAP_DIR/values/colors.xml 2>/dev/null; then
-              cat > $MIPMAP_DIR/values/colors.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">#0a0b0d</color>
-</resources>
-EOF
-            fi
-
-            echo "Ikon berhasil di-generate!"
-            ls -lh $MIPMAP_DIR/mipmap-xxxhdpi/
-          else
-            echo "www/icon.svg tidak ditemukan - pakai ikon default"
-          fi
+        run: bash .github/scripts/generate-icons.sh
 
       - name: Fix Android Build Config
         run: |
@@ -126,7 +50,6 @@ EOF
         run: |
           sed -i 's|<string name="app_name">.*</string>|<string name="app_name">DSP Console</string>|g' android/app/src/main/res/values/strings.xml
           sed -i 's|<string name="title_activity_main">.*</string>|<string name="title_activity_main">DSP Console</string>|g' android/app/src/main/res/values/strings.xml
-          cat android/app/src/main/res/values/strings.xml
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
