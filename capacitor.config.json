@@ -1,0 +1,12 @@
+{
+  "appId": "com.dsp.console",
+  "appName": "DSP Console",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0a0b0d"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
