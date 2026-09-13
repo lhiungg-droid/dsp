@@ -4,9 +4,19 @@
   "webDir": "www",
   "android": {
     "allowMixedContent": true,
-    "backgroundColor": "#0a0b0d"
+    "backgroundColor": "#0a0b0d",
+    "webContentsDebuggingEnabled": true
   },
   "server": {
     "androidScheme": "https"
+  },
+  "plugins": {
+    "KeepAwake": {
+      "enableOnLoad": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0b0d"
+    }
   }
 }
