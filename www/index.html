@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=yes">
 <title>Digital Management — DSP Console</title>
+  
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+  
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -87,12 +92,15 @@ body.high-contrast { --text: #ffffff; --text-silk: #ffffff; }
   text-shadow: 0 1px 0 #000000, 0 -1px 0 #ffffff11;
 }
 .logo .brand-mark {
-  display: inline-block; width: 26px; height: 26px; border-radius: 4px;
-  background: linear-gradient(135deg, #4a5058 0%, #2a2e34 50%, #1a1c1e 100%);
-  position: relative;
-  box-shadow: inset 0 1px 0 #ffffff33, inset 0 -1px 0 #00000088, 0 1px 2px #000000cc;
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 6px #4090ff88);
+  transition: filter .3s;
 }
-.logo .brand-mark::before {
+.logo .brand-mark:hover {
+  filter: drop-shadow(0 0 12px #4aee6a);
+}
+  .logo .brand-mark::before {
   content: ''; position: absolute; inset: 5px;
   background: linear-gradient(180deg, #4090ff, #2060c0); border-radius: 2px;
   box-shadow: inset 0 1px 0 #ffffff66;
@@ -1148,7 +1156,29 @@ input[type=checkbox]:checked::after {
 <div class="rack-label">DSP-R4 • 4-CHANNEL DIGITAL PROCESSOR</div>
 
 <div class="top-bar">
-<div class="logo"><span class="brand-mark"></span>Digital Management <small>DSP-R4</small></div>
+<div class="logo">
+  <svg class="brand-mark" viewBox="0 0 40 40" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#4090ff"/>
+        <stop offset="50%" stop-color="#4aee6a"/>
+        <stop offset="100%" stop-color="#a060e0"/>
+      </linearGradient>
+    </defs>
+    <rect x="2" y="2" width="36" height="36" rx="6" fill="#1a1c1e" stroke="#4a5058" stroke-width="1.5"/>
+    <g fill="url(#logoGrad)">
+      <rect x="6"  y="18" width="2.5" height="4"  rx="1"/>
+      <rect x="10" y="14" width="2.5" height="12" rx="1"/>
+      <rect x="14" y="10" width="2.5" height="20" rx="1"/>
+      <rect x="18" y="16" width="2.5" height="8"  rx="1"/>
+      <rect x="22" y="12" width="2.5" height="16" rx="1"/>
+      <rect x="26" y="10" width="2.5" height="20" rx="1"/>
+      <rect x="30" y="14" width="2.5" height="12" rx="1"/>
+      <rect x="34" y="18" width="2.5" height="4"  rx="1"/>
+    </g>
+  </svg>
+  Digital Management <small>DSP-R4</small>
+</div>
 <div class="sys-monitor">
 <span class="monitor-chip" id="connChip"><span class="m-label">LINK</span><span class="m-value" id="connStatus">USB</span></span>
 <span class="monitor-chip" id="tempChip"><span class="m-label">TEMP</span><span class="m-value" id="tempVal">42°C</span></span>
