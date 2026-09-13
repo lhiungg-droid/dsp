@@ -4,11 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=yes">
 <title>Digital Management — DSP Console</title>
-  
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-  
+
+<!-- === PATCH: ANDROID APP META === -->
+<meta name="theme-color" content="#0a0b0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -92,15 +94,12 @@ body.high-contrast { --text: #ffffff; --text-silk: #ffffff; }
   text-shadow: 0 1px 0 #000000, 0 -1px 0 #ffffff11;
 }
 .logo .brand-mark {
-  width: 32px;
-  height: 32px;
-  filter: drop-shadow(0 0 6px #4090ff88);
-  transition: filter .3s;
+  display: inline-block; width: 26px; height: 26px; border-radius: 4px;
+  background: linear-gradient(135deg, #4a5058 0%, #2a2e34 50%, #1a1c1e 100%);
+  position: relative;
+  box-shadow: inset 0 1px 0 #ffffff33, inset 0 -1px 0 #00000088, 0 1px 2px #000000cc;
 }
-.logo .brand-mark:hover {
-  filter: drop-shadow(0 0 12px #4aee6a);
-}
-  .logo .brand-mark::before {
+.logo .brand-mark::before {
   content: ''; position: absolute; inset: 5px;
   background: linear-gradient(180deg, #4090ff, #2060c0); border-radius: 2px;
   box-shadow: inset 0 1px 0 #ffffff66;
@@ -1156,29 +1155,7 @@ input[type=checkbox]:checked::after {
 <div class="rack-label">DSP-R4 • 4-CHANNEL DIGITAL PROCESSOR</div>
 
 <div class="top-bar">
-<div class="logo">
-  <svg class="brand-mark" viewBox="0 0 40 40" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#4090ff"/>
-        <stop offset="50%" stop-color="#4aee6a"/>
-        <stop offset="100%" stop-color="#a060e0"/>
-      </linearGradient>
-    </defs>
-    <rect x="2" y="2" width="36" height="36" rx="6" fill="#1a1c1e" stroke="#4a5058" stroke-width="1.5"/>
-    <g fill="url(#logoGrad)">
-      <rect x="6"  y="18" width="2.5" height="4"  rx="1"/>
-      <rect x="10" y="14" width="2.5" height="12" rx="1"/>
-      <rect x="14" y="10" width="2.5" height="20" rx="1"/>
-      <rect x="18" y="16" width="2.5" height="8"  rx="1"/>
-      <rect x="22" y="12" width="2.5" height="16" rx="1"/>
-      <rect x="26" y="10" width="2.5" height="20" rx="1"/>
-      <rect x="30" y="14" width="2.5" height="12" rx="1"/>
-      <rect x="34" y="18" width="2.5" height="4"  rx="1"/>
-    </g>
-  </svg>
-  Digital Management <small>DSP-R4</small>
-</div>
+<div class="logo"><span class="brand-mark"></span>Digital Management <small>DSP-R4</small></div>
 <div class="sys-monitor">
 <span class="monitor-chip" id="connChip"><span class="m-label">LINK</span><span class="m-value" id="connStatus">USB</span></span>
 <span class="monitor-chip" id="tempChip"><span class="m-label">TEMP</span><span class="m-value" id="tempVal">42°C</span></span>
@@ -1210,7 +1187,7 @@ input[type=checkbox]:checked::after {
 <button class="tab-btn" data-tab="rta">⌇ RTA</button>
 <button class="tab-btn fx-tab" data-tab="fx">✦ FX</button>
 <button class="tab-btn" data-tab="overview">▦ OVERVIEW</button>
-<button class="tab-btn" data-tab="preset">★ PRESET</button>
+<span class="tab-btn" data-tab="preset">★ PRESET</span>
 <button class="tab-btn" data-tab="system">⚙ SYSTEM</button>
 </div>
 
@@ -2068,15 +2045,9 @@ MID Pol: <span id="phaseInfoMidPol">Normal</span> •
 </div>
 
 <script>
-/* ============================================================
-   BAGIAN 2 — JAVASCRIPT CORE (FX + VU REVISI NATURAL)
-   ============================================================ */
 (function(){
 "use strict";
 
-/* ============================================================
-   AUDIOWORKLET METERING MODULE
-   ============================================================ */
 const METER_WORKLET_CODE = [
 'class MeterProcessor extends AudioWorkletProcessor {',
 '  constructor() {',
@@ -2133,9 +2104,6 @@ async function initMeterWorklet() {
   } catch(e) { console.warn('AudioWorklet not available:', e); }
 }
 
-/* ============================================================
-   GLOBAL STATE
-   ============================================================ */
 let audioCtx = null;
 let audioBuffer = null;
 let sourceNode = null;
@@ -2352,12 +2320,21 @@ function applyMuteVisual(channel, isMuted) {
   });
 }
 
+/* >>> PATCH: unlockAudioContext dengan KeepAwake <<< */
 function unlockAudioContext() {
   if (audioUnlocked) return;
   audioUnlocked = true;
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume().catch(()=>{});
   }
+
+  // === ANDROID BACKGROUND AUDIO FIX ===
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KeepAwake) {
+    try {
+      window.Capacitor.Plugins.KeepAwake.keepAwake().catch(()=>{});
+    } catch(e) {}
+  }
+
   if (videoElement) {
     const p = videoElement.play();
     if (p && p.then) {
@@ -2369,9 +2346,6 @@ function unlockAudioContext() {
   }
 }
 
-/* ============================================================
-   PLAYLIST
-   ============================================================ */
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]);
 }
@@ -2469,17 +2443,14 @@ function playPlaylistIndex(i) {
   const track = playlist[i];
 
   if (!initAudio()) return;
-
   cleanupMediaNodes();
 
   if (track.type === 'video') {
     videoContainer.style.display = 'block';
     $('videoToggleBtn').style.display = 'inline-block';
-
     try { videoElement.removeAttribute('src'); } catch(e){}
     try { videoElement.load(); } catch(e){}
     videoElement.src = track.url;
-
     videoElement.onloadedmetadata = () => {
       try {
         if (!mediaElementSourceCreated || !mediaElementSource) {
@@ -2490,23 +2461,17 @@ function playPlaylistIndex(i) {
         mediaElement = videoElement;
         $('totalTime').textContent = formatTime(videoElement.duration);
         videoElement.onended = handleTrackEnded;
-      } catch(err) {
-        console.error('Video source setup error:', err);
-      }
+      } catch(err) { console.error('Video source setup error:', err); }
     };
-
     const playPromise = videoElement.play();
-
     if (playPromise !== undefined && playPromise.then) {
       playPromise.then(() => {
-        isPlaying = true;
-        isPaused = false;
+        isPlaying = true; isPaused = false;
         $('statusText').innerText = 'PLAYING';
         $('engineLed').classList.add('active');
       }).catch(err => {
         console.warn('Video autoplay blocked:', err);
-        isPlaying = false;
-        isPaused = false;
+        isPlaying = false; isPaused = false;
         $('statusText').innerText = 'CLICK PLAY';
       });
     } else {
@@ -2517,7 +2482,6 @@ function playPlaylistIndex(i) {
     videoContainer.style.display = 'none';
     try { videoElement.removeAttribute('src'); videoElement.load(); } catch(e){}
     $('videoToggleBtn').style.display = 'none';
-
     const reader = new FileReader();
     reader.onload = e => {
       audioCtx.decodeAudioData(e.target.result, buffer => {
@@ -2565,9 +2529,6 @@ function handleTrackEnded() {
   else { isPlaying = false; $('statusText').innerText = 'STOPPED'; }
 }
 
-/* ============================================================
-   NUMERIC POPUP
-   ============================================================ */
 let activeNumPopup = null;
 function openNumericInput(opts){
   if(keylockActive) return;
@@ -2641,9 +2602,6 @@ function closeNumericInput(){
   }
 }
 
-/* ============================================================
-   KNOB SETUP
-   ============================================================ */
 function setupKnob(el, callback){
   if(!el) return { setVal: () => {}, getVal: () => 0 };
   let value = parseFloat(el.dataset.default) || 0;
@@ -2719,9 +2677,6 @@ function updateKnobVisual(knobEl, value){
   ind.style.transform = 'translateX(-50%) rotate(' + angle + 'deg)';
 }
 
-/* ============================================================
-   EDITABLE HANDLERS
-   ============================================================ */
 const EDITABLE_HANDLERS = {
   inputGain: v => { updateKnobVisual(inputGainKnob, v); if(gainNodeInput) smoothSet(gainNodeInput.gain, (inputMute ? 0 : 1) * Math.pow(10, v / 20)); updateOverview(); },
   inputPhase: v => {
@@ -2737,30 +2692,10 @@ const EDITABLE_HANDLERS = {
   midGain: v => { updateKnobVisual(midGainKnob, v); if(routeMidGain) smoothSet(routeMidGain.gain, midMute ? 0 : Math.pow(10, v / 20)); updateOverview(); },
   subDelay: v => setDelay('sub', v, false),
   midDelay: v => setDelay('mid', v, false),
-  subHpf: v => {
-    if(xoverSubHpf) smoothSet(xoverSubHpf.frequency, v);
-    updateKnobVisual(subHpfKnob, v);
-    $('subHpfVal').textContent = v.toFixed(0); $('subHpfValD').textContent = v.toFixed(0);
-    rebuildSlope(); updateOverview();
-  },
-  subLpf: v => {
-    if(xoverSubLpf) smoothSet(xoverSubLpf.frequency, v);
-    updateKnobVisual(subLpfKnob, v);
-    $('subLpfVal').textContent = v.toFixed(0); $('subLpfValD').textContent = v.toFixed(0);
-    updateOverview();
-  },
-  midHpf: v => {
-    if(xoverMidHpf) smoothSet(xoverMidHpf.frequency, v);
-    updateKnobVisual(midHpfKnob, v);
-    $('midHpfVal').textContent = v.toFixed(0); $('midHpfValD').textContent = v.toFixed(0);
-    rebuildSlope(); updateOverview();
-  },
-  midLpf: v => {
-    if(xoverMidLpf) smoothSet(xoverMidLpf.frequency, v);
-    updateKnobVisual(midLpfKnob, v);
-    $('midLpfVal').textContent = v.toFixed(0); $('midLpfValD').textContent = v.toFixed(0);
-    updateOverview();
-  },
+  subHpf: v => { if(xoverSubHpf) smoothSet(xoverSubHpf.frequency, v); updateKnobVisual(subHpfKnob, v); $('subHpfVal').textContent = v.toFixed(0); $('subHpfValD').textContent = v.toFixed(0); rebuildSlope(); updateOverview(); },
+  subLpf: v => { if(xoverSubLpf) smoothSet(xoverSubLpf.frequency, v); updateKnobVisual(subLpfKnob, v); $('subLpfVal').textContent = v.toFixed(0); $('subLpfValD').textContent = v.toFixed(0); updateOverview(); },
+  midHpf: v => { if(xoverMidHpf) smoothSet(xoverMidHpf.frequency, v); updateKnobVisual(midHpfKnob, v); $('midHpfVal').textContent = v.toFixed(0); $('midHpfValD').textContent = v.toFixed(0); rebuildSlope(); updateOverview(); },
+  midLpf: v => { if(xoverMidLpf) smoothSet(xoverMidLpf.frequency, v); updateKnobVisual(midLpfKnob, v); $('midLpfVal').textContent = v.toFixed(0); $('midLpfValD').textContent = v.toFixed(0); updateOverview(); },
   fxParamA: v => { fxParamA = v; applyFXParams(); updateFXParamReadouts(); flashEditLed(); },
   fxParamB: v => { fxParamB = v; applyFXParams(); updateFXParamReadouts(); flashEditLed(); }
 };
@@ -2788,9 +2723,6 @@ function attachEditableHandlers(){
   });
 }
 
-/* ============================================================
-   DELAY / POLARITY / AUDIO INIT
-   ============================================================ */
 function setDelay(which, ms, fromRouting){
   ms = Math.max(0, Math.min(30, ms));
   if(which === 'sub'){
@@ -2879,28 +2811,18 @@ function rebuildSlope(){
   } catch(e){}
 }
 
-/* ============================================================
-   FX NODE BUILDERS — NATURAL SOUND REVISION
-   ============================================================ */
-
 function createReverbNode(ctx){
   const input = ctx.createGain();
   const output = ctx.createGain();
-
   const preDelay = ctx.createDelay(0.5);
   preDelay.delayTime.value = 0.022;
-
   const convolver = ctx.createConvolver();
   const len = Math.max(0.3, ctx.sampleRate * Math.max(0.5, fxDecay));
   const buf = ctx.createBuffer(2, len, ctx.sampleRate);
   const preDelaySamples = Math.floor(0.02 * ctx.sampleRate);
-
   for (let ch = 0; ch < 2; ch++) {
     const d = buf.getChannelData(ch);
-    const er = [
-      [0.007, 0.85], [0.011, 0.65], [0.017, 0.55],
-      [0.023, 0.45], [0.031, 0.35], [0.043, 0.28], [0.057, 0.22]
-    ];
+    const er = [[0.007,0.85],[0.011,0.65],[0.017,0.55],[0.023,0.45],[0.031,0.35],[0.043,0.28],[0.057,0.22]];
     er.forEach(([t, g]) => {
       const idx = preDelaySamples + Math.floor(t * ctx.sampleRate) + (ch * 37);
       if (idx < len) d[idx] += g * (ch === 0 ? 1 : 0.92);
@@ -2918,87 +2840,46 @@ function createReverbNode(ctx){
     }
   }
   convolver.buffer = buf;
-
   const damping = ctx.createBiquadFilter();
-  damping.type = 'lowpass';
-  damping.frequency.value = 6500;
-  damping.Q.value = 0.6;
-
+  damping.type = 'lowpass'; damping.frequency.value = 6500; damping.Q.value = 0.6;
   const wet = ctx.createGain(); wet.gain.value = 0.5;
   const dry = ctx.createGain(); dry.gain.value = 0.7;
-
   input.connect(dry); dry.connect(output);
-  input.connect(preDelay);
-  preDelay.connect(convolver);
-  convolver.connect(damping);
-  damping.connect(wet); wet.connect(output);
-
+  input.connect(preDelay); preDelay.connect(convolver);
+  convolver.connect(damping); damping.connect(wet); wet.connect(output);
   return { input, output, convolver, damping, preDelay, wet, dry };
 }
-
 function createDelayNode(ctx){
   const input = ctx.createGain();
   const output = ctx.createGain();
-
-  const dl = ctx.createDelay(2.5);
-  dl.delayTime.value = fxDelayTime;
-
-  const damp = ctx.createBiquadFilter();
-  damp.type = 'lowpass';
-  damp.frequency.value = 3800;
-  damp.Q.value = 0.5;
-
-  const fb = ctx.createGain();
-  fb.gain.value = Math.min(0.55, 0.18 + (fxParamB / 100) * 0.37);
-
+  const dl = ctx.createDelay(2.5); dl.delayTime.value = fxDelayTime;
+  const damp = ctx.createBiquadFilter(); damp.type = 'lowpass'; damp.frequency.value = 3800; damp.Q.value = 0.5;
+  const fb = ctx.createGain(); fb.gain.value = Math.min(0.55, 0.18 + (fxParamB / 100) * 0.37);
   const wet = ctx.createGain(); wet.gain.value = 0.5;
   const dry = ctx.createGain(); dry.gain.value = 0.75;
-
   input.connect(dry); dry.connect(output);
-  input.connect(dl);
-  dl.connect(damp);
-  damp.connect(fb); fb.connect(dl);
-  damp.connect(wet); wet.connect(output);
-
+  input.connect(dl); dl.connect(damp);
+  damp.connect(fb); fb.connect(dl); damp.connect(wet); wet.connect(output);
   return { input, output, delay: dl, feedback: fb, damping: damp, wet, dry };
 }
-
 function createFlangerNode(ctx){
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-
-  const dl = ctx.createDelay(0.02);
-  dl.delayTime.value = 0.0022;
-
-  const lfo = ctx.createOscillator();
-  lfo.type = 'sine';
-  lfo.frequency.value = 0.28;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 0.0018;
+  const input = ctx.createGain(); const output = ctx.createGain();
+  const dl = ctx.createDelay(0.02); dl.delayTime.value = 0.0022;
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.28;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.0018;
   lfo.connect(lfoGain); lfoGain.connect(dl.delayTime);
   try { lfo.start(); } catch(e){}
-
   const fb = ctx.createGain(); fb.gain.value = 0.55;
   const wet = ctx.createGain(); wet.gain.value = 0.5;
   const dry = ctx.createGain(); dry.gain.value = 0.7;
-
   input.connect(dry); dry.connect(output);
-  input.connect(dl);
-  dl.connect(fb); fb.connect(dl);
-  dl.connect(wet); wet.connect(output);
-
+  input.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(output);
   return { input, output, lfo, lfoGain, feedback: fb, wet, dry };
 }
-
 function createChorusNode(ctx){
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-
-  const dl1 = ctx.createDelay(0.05);
-  const dl2 = ctx.createDelay(0.05);
-  dl1.delayTime.value = 0.018;
-  dl2.delayTime.value = 0.024;
-
+  const input = ctx.createGain(); const output = ctx.createGain();
+  const dl1 = ctx.createDelay(0.05); const dl2 = ctx.createDelay(0.05);
+  dl1.delayTime.value = 0.018; dl2.delayTime.value = 0.024;
   const lfo1 = ctx.createOscillator(); lfo1.type = 'sine'; lfo1.frequency.value = 0.6;
   const lfo2 = ctx.createOscillator(); lfo2.type = 'sine'; lfo2.frequency.value = 0.9;
   const lg1 = ctx.createGain(); lg1.gain.value = 0.004;
@@ -3006,66 +2887,43 @@ function createChorusNode(ctx){
   lfo1.connect(lg1); lg1.connect(dl1.delayTime);
   lfo2.connect(lg2); lg2.connect(dl2.delayTime);
   try { lfo1.start(); lfo2.start(); } catch(e){}
-
   const wet = ctx.createGain(); wet.gain.value = 0.45;
   const dry = ctx.createGain(); dry.gain.value = 0.7;
-
   input.connect(dry); dry.connect(output);
   input.connect(dl1); input.connect(dl2);
   dl1.connect(wet); dl2.connect(wet); wet.connect(output);
-
   return { input, output, lfo: lfo1, lfo2, lfoGain: lg1, wet, dry };
 }
-
 function createPhaserNode(ctx){
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-
+  const input = ctx.createGain(); const output = ctx.createGain();
   const ap1 = ctx.createBiquadFilter(); ap1.type = 'allpass'; ap1.frequency.value = 400;  ap1.Q.value = 0.7;
   const ap2 = ctx.createBiquadFilter(); ap2.type = 'allpass'; ap2.frequency.value = 800;  ap2.Q.value = 0.7;
   const ap3 = ctx.createBiquadFilter(); ap3.type = 'allpass'; ap3.frequency.value = 1600; ap3.Q.value = 0.7;
   const ap4 = ctx.createBiquadFilter(); ap4.type = 'allpass'; ap4.frequency.value = 3200; ap4.Q.value = 0.7;
-
-  const lfo = ctx.createOscillator();
-  lfo.type = 'sine'; lfo.frequency.value = 0.35;
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.35;
   const lfoGain = ctx.createGain(); lfoGain.gain.value = 350;
   lfo.connect(lfoGain);
-  lfoGain.connect(ap1.frequency);
-  lfoGain.connect(ap2.frequency);
-  lfoGain.connect(ap3.frequency);
-  lfoGain.connect(ap4.frequency);
+  lfoGain.connect(ap1.frequency); lfoGain.connect(ap2.frequency);
+  lfoGain.connect(ap3.frequency); lfoGain.connect(ap4.frequency);
   try { lfo.start(); } catch(e){}
-
   const fb = ctx.createGain(); fb.gain.value = 0.3;
   const wet = ctx.createGain(); wet.gain.value = 0.5;
   const dry = ctx.createGain(); dry.gain.value = 0.7;
-
   input.connect(dry); dry.connect(output);
-  input.connect(ap1);
-  ap1.connect(ap2); ap2.connect(ap3); ap3.connect(ap4);
-  ap4.connect(fb); fb.connect(ap1);
-  ap4.connect(wet); wet.connect(output);
-
+  input.connect(ap1); ap1.connect(ap2); ap2.connect(ap3); ap3.connect(ap4);
+  ap4.connect(fb); fb.connect(ap1); ap4.connect(wet); wet.connect(output);
   return { input, output, lfo, lfoGain, feedback: fb, wet, dry, stages: [ap1, ap2, ap3, ap4] };
 }
-
 function createTremoloNode(ctx){
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-
-  const g = ctx.createGain();
-  g.gain.value = 0.75;
-  const lfo = ctx.createOscillator();
-  lfo.type = 'sine'; lfo.frequency.value = 5;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 0.25;
+  const input = ctx.createGain(); const output = ctx.createGain();
+  const g = ctx.createGain(); g.gain.value = 0.75;
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.25;
   lfo.connect(lfoGain); lfoGain.connect(g.gain);
   try { lfo.start(); } catch(e){}
-
   input.connect(g); g.connect(output);
   return { input, output, lfo, lfoGain, gainNode: g };
 }
-
 const FX_TYPES = {
   reverb:  { name: 'Reverb',  build: createReverbNode },
   delay:   { name: 'Delay',   build: createDelayNode },
@@ -3074,7 +2932,6 @@ const FX_TYPES = {
   phaser:  { name: 'Phaser',  build: createPhaserNode },
   tremolo: { name: 'Tremolo', build: createTremoloNode }
 };
-
 function rebuildFXChain(){
   if(!audioCtx || !fxInputNode || !fxSendGain || !fxReturnGain) return;
   try { fxSendGain.disconnect(); } catch(e){}
@@ -3131,7 +2988,6 @@ function applyFXParams(){
   });
 }
 
-/* Equal-power crossfade — tidak ada boost, tidak ada dip */
 function setFXDryWet(mixPercent){
   const mix = Math.max(0, Math.min(1, mixPercent / 100));
   const dry = Math.cos(mix * Math.PI / 2);
@@ -3441,7 +3297,6 @@ function buildDSP(){
   fxRouteL = audioCtx.createGain(); fxRouteL.gain.value = 0;
   fxRouteR = audioCtx.createGain(); fxRouteR.gain.value = 0;
 
-  // Master FX tone (roll-off halus di high-end untuk "warmth")
   fxMasterTone = audioCtx.createBiquadFilter();
   fxMasterTone.type = 'lowpass';
   fxMasterTone.frequency.value = 14000;
@@ -3524,7 +3379,6 @@ function isChannelRActive() {
   const midActiveOnR = (midOutputTarget === 'R') && !midMute;
   return subActiveOnR || midActiveOnR;
 }
-
 function applyOutputRouting(){
   if(!gainSubL || !gainSubR || !gainMidL || !gainMidR) return;
   const subL = (subOutputTarget === 'L') ? 1 : 0;
@@ -3538,23 +3392,18 @@ function applyOutputRouting(){
   updateOutputRoutingUI();
   applyFXOutputRouting();
 }
-
 function applyFXOutputRouting(){
   if(!fxRouteL || !fxRouteR) return;
   const l = (fxOutputTarget === 'L' || fxOutputTarget === 'BOTH') ? 1 : 0;
   const r = (fxOutputTarget === 'R' || fxOutputTarget === 'BOTH') ? 1 : 0;
   const active = (fxActive && fxChain.length > 0) ? 1 : 0;
-
   let targetActive = 0;
   if (fxOutputTarget === 'L') targetActive = isChannelLActive() ? 1 : 0;
   else if (fxOutputTarget === 'R') targetActive = isChannelRActive() ? 1 : 0;
   else targetActive = (isChannelLActive() || isChannelRActive()) ? 1 : 0;
-
   fxRouteL.gain.value = l * active * targetActive;
   fxRouteR.gain.value = r * active * targetActive;
-
   setFXDryWet(fxWetMix);
-
   const fxLed = $('fxLed'); if(fxLed) fxLed.classList.toggle('active', active === 1);
   const fxL = $('fxOutL'), fxR = $('fxOutR'), fxBoth = $('fxOutBoth');
   if(!fxL) return;
@@ -3563,7 +3412,6 @@ function applyFXOutputRouting(){
   else if(fxOutputTarget === 'R') fxR.classList.add('active-r');
   else fxBoth.classList.add('active-both');
 }
-
 function updateOutputRoutingUI(){
   const subBtnL = $('subOutL'), subBtnR = $('subOutR');
   const midBtnL = $('midOutL'), midBtnR = $('midOutR');
@@ -3785,25 +3633,19 @@ function renderEQListForChannel(ch){
     });
   });
 }
-/* ============================================================
-   PEQ — PARAMETRIC EQ WITH MANUAL INPUT
-   ============================================================ */
 function renderPEQControlsForChannel(ch){
   const container = $('peqContainer_' + ch);
   if(!container) return;
   container.innerHTML = '';
   const peqArr = eqChannels[ch].peq;
-
   for(let i = 0; i < 8; i++){
     const div = document.createElement('div');
     div.style.cssText = 'background:linear-gradient(180deg,#24272b,#1a1c1e);border-radius:3px;border:1px solid #0e1013;padding:10px;margin-bottom:6px;box-shadow:inset 0 1px 0 #4a505833;';
-
     const n = peqArr[i];
     const initFreq = n ? n.frequency.value : (100 + i * 300);
     const initGain = n ? n.gain.value : 0;
     const initQ = n ? n.Q.value : 1;
     const initType = n ? n.type : 'peaking';
-
     div.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
         '<span class="text-dim mono" style="color:#40ff70;font-weight:700;font-size:0.65rem;text-shadow:0 0 4px #40ff7066;">B' + (i + 1) + '</span>' +
@@ -3846,7 +3688,6 @@ function renderPEQControlsForChannel(ch){
         '</div>' +
       '</div>';
     container.appendChild(div);
-
     const idx = i;
     const freqSlider = $('peqFreq_' + ch + '_' + idx);
     const freqInput  = $('peqFreqIn_' + ch + '_' + idx);
@@ -3855,106 +3696,30 @@ function renderPEQControlsForChannel(ch){
     const qSlider    = $('peqQ_' + ch + '_' + idx);
     const qInput     = $('peqQIn_' + ch + '_' + idx);
     const typeSel    = $('peqType_' + ch + '_' + idx);
-
-    function applyFreq(v){
-      v = Math.max(20, Math.min(20000, v));
-      if(peqArr[idx]) peqArr[idx].frequency.value = v;
-      freqSlider.value = v;
-      freqInput.value = v.toFixed(0);
-      drawEQCurveForChannel(ch); updateOverview();
-    }
-    function applyGain(v){
-      v = Math.max(-15, Math.min(15, v));
-      if(peqArr[idx]) peqArr[idx].gain.value = v;
-      gainSlider.value = v;
-      gainInput.value = v.toFixed(1);
-      drawEQCurveForChannel(ch); updateOverview();
-    }
-    function applyQ(v){
-      v = Math.max(0.1, Math.min(10, v));
-      if(peqArr[idx]) peqArr[idx].Q.value = v;
-      qSlider.value = v;
-      qInput.value = v.toFixed(1);
-      drawEQCurveForChannel(ch); updateOverview();
-    }
-
-    freqSlider.addEventListener('input', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(peqArr[idx]) peqArr[idx].frequency.value = v;
-      freqInput.value = v.toFixed(0);
-      drawEQCurveForChannel(ch); updateOverview();
-    });
-    freqInput.addEventListener('change', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyFreq(v);
-    });
-    freqInput.addEventListener('blur', function(){
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyFreq(v);
-    });
-    freqInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter'){ e.preventDefault(); this.blur(); }
-    });
-
-    gainSlider.addEventListener('input', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(peqArr[idx]) peqArr[idx].gain.value = v;
-      gainInput.value = v.toFixed(1);
-      drawEQCurveForChannel(ch); updateOverview();
-    });
-    gainInput.addEventListener('change', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyGain(v);
-    });
-    gainInput.addEventListener('blur', function(){
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyGain(v);
-    });
-    gainInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter'){ e.preventDefault(); this.blur(); }
-    });
-
-    qSlider.addEventListener('input', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(peqArr[idx]) peqArr[idx].Q.value = v;
-      qInput.value = v.toFixed(1);
-      drawEQCurveForChannel(ch); updateOverview();
-    });
-    qInput.addEventListener('change', function(){
-      if(keylockActive) return;
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyQ(v);
-    });
-    qInput.addEventListener('blur', function(){
-      const v = parseFloat(this.value);
-      if(!isNaN(v)) applyQ(v);
-    });
-    qInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter'){ e.preventDefault(); this.blur(); }
-    });
-
-    typeSel.addEventListener('change', function(){
-      if(keylockActive) return;
-      if(peqArr[idx]) peqArr[idx].type = this.value;
-      drawEQCurveForChannel(ch); updateOverview();
-    });
+    function applyFreq(v){ v = Math.max(20, Math.min(20000, v)); if(peqArr[idx]) peqArr[idx].frequency.value = v; freqSlider.value = v; freqInput.value = v.toFixed(0); drawEQCurveForChannel(ch); updateOverview(); }
+    function applyGain(v){ v = Math.max(-15, Math.min(15, v)); if(peqArr[idx]) peqArr[idx].gain.value = v; gainSlider.value = v; gainInput.value = v.toFixed(1); drawEQCurveForChannel(ch); updateOverview(); }
+    function applyQ(v){ v = Math.max(0.1, Math.min(10, v)); if(peqArr[idx]) peqArr[idx].Q.value = v; qSlider.value = v; qInput.value = v.toFixed(1); drawEQCurveForChannel(ch); updateOverview(); }
+    freqSlider.addEventListener('input', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(peqArr[idx]) peqArr[idx].frequency.value = v; freqInput.value = v.toFixed(0); drawEQCurveForChannel(ch); updateOverview(); });
+    freqInput.addEventListener('change', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(!isNaN(v)) applyFreq(v); });
+    freqInput.addEventListener('blur', function(){ const v = parseFloat(this.value); if(!isNaN(v)) applyFreq(v); });
+    freqInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); this.blur(); } });
+    gainSlider.addEventListener('input', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(peqArr[idx]) peqArr[idx].gain.value = v; gainInput.value = v.toFixed(1); drawEQCurveForChannel(ch); updateOverview(); });
+    gainInput.addEventListener('change', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(!isNaN(v)) applyGain(v); });
+    gainInput.addEventListener('blur', function(){ const v = parseFloat(this.value); if(!isNaN(v)) applyGain(v); });
+    gainInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); this.blur(); } });
+    qSlider.addEventListener('input', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(peqArr[idx]) peqArr[idx].Q.value = v; qInput.value = v.toFixed(1); drawEQCurveForChannel(ch); updateOverview(); });
+    qInput.addEventListener('change', function(){ if(keylockActive) return; const v = parseFloat(this.value); if(!isNaN(v)) applyQ(v); });
+    qInput.addEventListener('blur', function(){ const v = parseFloat(this.value); if(!isNaN(v)) applyQ(v); });
+    qInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); this.blur(); } });
+    typeSel.addEventListener('change', function(){ if(keylockActive) return; if(peqArr[idx]) peqArr[idx].type = this.value; drawEQCurveForChannel(ch); updateOverview(); });
   }
 }
 
-/* EQ CURVE DRAW + INTERACTIVE */
 const _eqCurvePending = {};
 function drawEQCurveForChannel(ch){
   if(_eqCurvePending[ch]) return;
   _eqCurvePending[ch] = true;
-  requestAnimationFrame(() => {
-    _eqCurvePending[ch] = false;
-    _drawEQCurveForChannelNow(ch);
-  });
+  requestAnimationFrame(() => { _eqCurvePending[ch] = false; _drawEQCurveForChannelNow(ch); });
 }
 function _drawEQCurveForChannelNow(ch){
   const canvas = $('eqCurveCanvas_' + ch);
@@ -3963,8 +3728,7 @@ function _drawEQCurveForChannelNow(ch){
   canvas.width = canvas.parentElement.clientWidth || 400;
   canvas.height = canvas.parentElement.clientHeight || 110;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#060806';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#060806'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.font = '9px "JetBrains Mono", monospace';
   const dbMin = -24, dbMax = 12, dbRange = dbMax - dbMin;
   for(let db = dbMin; db <= dbMax; db += 6){
@@ -4045,12 +3809,7 @@ function makeEQCanvasInteractive(ch){
   canvas.addEventListener('mousedown', e => {
     if(keylockActive) return;
     const info = findNearestBand(e.clientX);
-    if (info.index >= 0) {
-      draggingBand = info.index;
-      canvas.style.cursor = 'grabbing';
-      applyDrag(e.clientX, e.clientY);
-      e.preventDefault();
-    }
+    if (info.index >= 0) { draggingBand = info.index; canvas.style.cursor = 'grabbing'; applyDrag(e.clientX, e.clientY); e.preventDefault(); }
   });
   canvas.addEventListener('mousemove', e => {
     if(keylockActive) return;
@@ -4071,15 +3830,13 @@ function makeEQCanvasInteractive(ch){
     if(keylockActive) return;
     if (draggingBand < 0) return;
     const t = e.touches[0];
-    applyDrag(t.clientX, t.clientY);
-    e.preventDefault();
+    applyDrag(t.clientX, t.clientY); e.preventDefault();
   }, { passive: false });
   canvas.addEventListener('touchend', () => {
     if (draggingBand >= 0) { draggingBand = -1; hideKnobTooltip(600); }
   });
 }
 
-/* CROSSOVER DRAW */
 let _rafXover = null;
 function drawCrossover(){
   if(_rafXover) cancelAnimationFrame(_rafXover);
@@ -4121,18 +3878,13 @@ function drawCrossover(){
   _rafXover = requestAnimationFrame(drawCrossover);
 }
 
-/* ============================================================
-   METERS — REVISI: VU BENAR-BENAR MENGUKUR SINYAL AUDIO
-   ============================================================ */
 function animateMeters(){
   if(!audioCtx || !analyserRTA){ requestAnimationFrame(animateMeters); return; }
   try {
     const bufLen = analyserRTA.fftSize;
     const timeData = new Uint8Array(bufLen);
     analyserRTA.getByteTimeDomainData(timeData);
-
-    let peak = 0;
-    let sumSq = 0;
+    let peak = 0, sumSq = 0;
     for (let i = 0; i < bufLen; i++) {
       const v = (timeData[i] - 128) / 128;
       const a = Math.abs(v);
@@ -4142,29 +3894,20 @@ function animateMeters(){
     const rms = Math.sqrt(sumSq / bufLen);
     const peakDb = peak > 0.0001 ? 20 * Math.log10(peak) : -100;
     const rmsDb  = rms  > 0.0001 ? 20 * Math.log10(rms)  : -100;
-
-    // Peak hold decay
     meterPeakDb = Math.max(peakDb, meterPeakDb - 1.2);
     meterRmsDb  = rmsDb;
-
     const pctOf = db => Math.max(0, Math.min(100, (db + 60) / 60 * 100));
-
-    // INPUT METER
     if ($('inputMeterFillH')) $('inputMeterFillH').style.width = pctOf(meterRmsDb) + '%';
     if ($('inputPeakH'))      $('inputPeakH').innerText = meterPeakDb > -90 ? meterPeakDb.toFixed(1) + ' dB' : '-∞';
-
     const inputClipLedH = $('inputClipLedH');
     if (inputClipLedH) {
       if (peakDb > -0.3) inputClipTime = performance.now();
       inputClipLedH.classList.toggle('active', performance.now() - inputClipTime < 800);
     }
-
-    // SUB / MID METER — peak × gain
     const subGain = routeSubGain ? routeSubGain.gain.value : 0;
     const midGain = routeMidGain ? routeMidGain.gain.value : 0;
     const subLevelDb = peakDb + 20 * Math.log10(Math.max(0.0001, subGain));
     const midLevelDb = peakDb + 20 * Math.log10(Math.max(0.0001, midGain));
-
     if ($('subMeterFillH')) $('subMeterFillH').style.width = pctOf(subLevelDb) + '%';
     if ($('subPeakH'))      $('subPeakH').innerText = subLevelDb > -60 ? subLevelDb.toFixed(1) + ' dB' : '-∞';
     const scl = $('subClipLedH');
@@ -4172,7 +3915,6 @@ function animateMeters(){
       if (subLevelDb > -0.3) subClipTime = performance.now();
       scl.classList.toggle('active', performance.now() - subClipTime < 800);
     }
-
     if ($('midMeterFillH')) $('midMeterFillH').style.width = pctOf(midLevelDb) + '%';
     if ($('midPeakH'))      $('midPeakH').innerText = midLevelDb > -60 ? midLevelDb.toFixed(1) + ' dB' : '-∞';
     const mcl = $('midClipLedH');
@@ -4180,8 +3922,6 @@ function animateMeters(){
       if (midLevelDb > -0.3) midClipTime = performance.now();
       mcl.classList.toggle('active', performance.now() - midClipTime < 800);
     }
-
-    // MASTER L / R
     if (gainSubL && gainSubR && gainMidL && gainMidR) {
       const lLin = gainSubL.gain.value + gainMidL.gain.value;
       const rLin = gainSubR.gain.value + gainMidR.gain.value;
@@ -4190,18 +3930,12 @@ function animateMeters(){
       if ($('masterLvlL')) $('masterLvlL').textContent = lDb > -60 ? lDb.toFixed(1) + ' dB' : '-inf';
       if ($('masterLvlR')) $('masterLvlR').textContent = rDb > -60 ? rDb.toFixed(1) + ' dB' : '-inf';
     }
-
-    // GAIN REDUCTION
     if (compSub && $('subGR')) $('subGR').textContent = (compSub.reduction || 0).toFixed(1) + ' dB';
     if (compMid && $('midGR')) $('midGR').textContent = (compMid.reduction || 0).toFixed(1) + ' dB';
-
-    // LED STATUS sinkron
     if ($('engineLed')) $('engineLed').classList.toggle('active', isPlaying || (audioCtx && audioCtx.state === 'running'));
     if ($('dspLed'))    $('dspLed').classList.toggle('active', !bypassActive);
     if ($('fxLed'))     $('fxLed').classList.toggle('active', fxActive && fxChain.length > 0);
-    if ($('statusLed')) {
-      $('statusLed').className = navigator.onLine ? 'led-dot active' : 'led-dot red';
-    }
+    if ($('statusLed')) $('statusLed').className = navigator.onLine ? 'led-dot active' : 'led-dot red';
   } catch(e){}
   requestAnimationFrame(animateMeters);
 }
@@ -4217,26 +3951,19 @@ function drawWaveform(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#060806'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   if(!audioBuffer){
-    ctx.fillStyle = '#2a2e34';
-    ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('NO MEDIA', canvas.width / 2, canvas.height / 2);
-    ctx.textAlign = 'start';
-    _rafWave = requestAnimationFrame(drawWaveform);
-    return;
+    ctx.fillStyle = '#2a2e34'; ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center'; ctx.fillText('NO MEDIA', canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = 'start'; _rafWave = requestAnimationFrame(drawWaveform); return;
   }
   const data = audioBuffer.getChannelData(0);
   const step = Math.floor(data.length / canvas.width);
-  ctx.strokeStyle = '#40ff70'; ctx.lineWidth = 1.5;
-  ctx.beginPath();
+  ctx.strokeStyle = '#40ff70'; ctx.lineWidth = 1.5; ctx.beginPath();
   for(let i = 0; i < canvas.width; i++){
-    let idx = i * step;
-    let val = data[idx] || 0;
+    let idx = i * step; let val = data[idx] || 0;
     let y = canvas.height / 2 + val * (canvas.height / 2) * 0.85;
     if(i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
   }
-  ctx.stroke();
-  _rafWave = requestAnimationFrame(drawWaveform);
+  ctx.stroke(); _rafWave = requestAnimationFrame(drawWaveform);
 }
 function drawRTA(){
   const canvas = $('rtaCanvas');
@@ -4254,8 +3981,7 @@ function drawRTA(){
     const barWidth = canvas.width / data.length;
     let peakVal = 0, peakIdx = 0;
     for(let i = 0; i < data.length; i++){
-      const val = data[i] / 255;
-      const h = val * canvas.height;
+      const val = data[i] / 255; const h = val * canvas.height;
       if(val > peakVal){ peakVal = val; peakIdx = i; }
       ctx.fillStyle = 'hsl(' + (160 - val * 160) + ', 60%, ' + (30 + val * 30) + '%)';
       ctx.fillRect(i * barWidth, canvas.height - h, Math.max(1, barWidth - 1), h);
@@ -4278,8 +4004,7 @@ function drawScope(){
     analyserScope.getByteTimeDomainData(data);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#060806'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#40ff70'; ctx.lineWidth = 2;
-    ctx.beginPath();
+    ctx.strokeStyle = '#40ff70'; ctx.lineWidth = 2; ctx.beginPath();
     for(let i = 0; i < data.length; i++){
       const v = (data[i] - 128) / 128;
       const x = (i / data.length) * canvas.width;
@@ -4290,8 +4015,6 @@ function drawScope(){
   } catch(e){}
   requestAnimationFrame(drawScope);
 }
-
-/* PRESETS */
 function loadPresets(){
   try {
     const data = localStorage.getItem('dlms_presets');
@@ -4414,7 +4137,6 @@ function loadPreset(name){
   applyState(data);
 }
 
-/* CONNECTION */
 let _connStableState = 'online', _connLastChangeTime = 0, _connRetryCount = 0, _connRetryTimer = null;
 const CONN_STABLE_HOLD_MS = 3000;
 function detectRealConnection(){
@@ -4512,7 +4234,6 @@ function updateSessionUptime(){
     String(mins).padStart(2, '0') + 'm ' + String(secs).padStart(2, '0') + 's';
 }
 
-/* SETUP CONTROLS */
 function setupControls(){
   function safeOn(id, event, handler){
     const el = (typeof id === 'string') ? $(id) : id;
@@ -4847,30 +4568,16 @@ function setupControls(){
   setupKnob(subDelayKnob, throttle(v => setDelay('sub', v, false), 50));
   setupKnob(midDelayKnob, throttle(v => setDelay('mid', v, false), 50));
   setupKnob(subHpfKnob, throttle(v => {
-    if(xoverSubHpf){
-      smoothSet(xoverSubHpf.frequency, v);
-      $('subHpfVal').textContent = v.toFixed(0); $('subHpfValD').textContent = v.toFixed(0);
-      rebuildSlope();
-    }
+    if(xoverSubHpf){ smoothSet(xoverSubHpf.frequency, v); $('subHpfVal').textContent = v.toFixed(0); $('subHpfValD').textContent = v.toFixed(0); rebuildSlope(); }
   }, 60));
   setupKnob(subLpfKnob, throttle(v => {
-    if(xoverSubLpf){
-      smoothSet(xoverSubLpf.frequency, v);
-      $('subLpfVal').textContent = v.toFixed(0); $('subLpfValD').textContent = v.toFixed(0);
-    }
+    if(xoverSubLpf){ smoothSet(xoverSubLpf.frequency, v); $('subLpfVal').textContent = v.toFixed(0); $('subLpfValD').textContent = v.toFixed(0); }
   }, 60));
   setupKnob(midHpfKnob, throttle(v => {
-    if(xoverMidHpf){
-      smoothSet(xoverMidHpf.frequency, v);
-      $('midHpfVal').textContent = v.toFixed(0); $('midHpfValD').textContent = v.toFixed(0);
-      rebuildSlope();
-    }
+    if(xoverMidHpf){ smoothSet(xoverMidHpf.frequency, v); $('midHpfVal').textContent = v.toFixed(0); $('midHpfValD').textContent = v.toFixed(0); rebuildSlope(); }
   }, 60));
   setupKnob(midLpfKnob, throttle(v => {
-    if(xoverMidLpf){
-      smoothSet(xoverMidLpf.frequency, v);
-      $('midLpfVal').textContent = v.toFixed(0); $('midLpfValD').textContent = v.toFixed(0);
-    }
+    if(xoverMidLpf){ smoothSet(xoverMidLpf.frequency, v); $('midLpfVal').textContent = v.toFixed(0); $('midLpfValD').textContent = v.toFixed(0); }
   }, 60));
   setupKnob(fxParamAKnob, v => { fxParamA = v; applyFXParams(); updateFXParamReadouts(); if($('fxParamAVal')) $('fxParamAVal').textContent = v; flashEditLed(); });
   setupKnob(fxParamBKnob, v => { fxParamB = v; applyFXParams(); updateFXParamReadouts(); if($('fxParamBVal')) $('fxParamBVal').textContent = v; flashEditLed(); });
@@ -5204,7 +4911,6 @@ function applyAPF(){
   if($('phaseInfoDelay')) $('phaseInfoDelay').textContent = delayDiff.toFixed(2) + ' ms';
 }
 
-/* INIT */
 async function init(){
   try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
   catch(e){ alert('Web Audio API tidak didukung'); return; }
@@ -5302,6 +5008,67 @@ async function init(){
     }
   }, 200);
 }
+
+/* ============================================================
+   >>> PATCH: BACKGROUND AUDIO KEEP-ALIVE <<<
+   ============================================================ */
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(()=>{});
+    }
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KeepAwake) {
+      try { window.Capacitor.Plugins.KeepAwake.keepAwake().catch(()=>{}); } catch(e){}
+    }
+  } else {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(()=>{});
+    }
+  }
+});
+
+if (navigator.wakeLock && navigator.wakeLock.request) {
+  navigator.wakeLock.request('screen').catch(()=>{});
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden && navigator.wakeLock && navigator.wakeLock.request) {
+    navigator.wakeLock.request('screen').catch(()=>{});
+  }
+});
+
+if ('mediaSession' in navigator) {
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'DSP Console',
+      artist: 'Digital Management',
+      album: 'DSP-R4 Processor'
+    });
+    navigator.mediaSession.setActionHandler('play', function(){ 
+      var playBtn = document.getElementById('playBtn');
+      if (playBtn) playBtn.click();
+    });
+    navigator.mediaSession.setActionHandler('pause', function(){ 
+      var pauseBtn = document.getElementById('pauseBtn');
+      if (pauseBtn) pauseBtn.click();
+    });
+    navigator.mediaSession.setActionHandler('stop', function(){ 
+      var stopBtn = document.getElementById('stopBtn');
+      if (stopBtn) stopBtn.click();
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', function(){ 
+      var nextBtn = document.getElementById('plNextBtn');
+      if (nextBtn) nextBtn.click();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', function(){ 
+      var prevBtn = document.getElementById('plPrevBtn');
+      if (prevBtn) prevBtn.click();
+    });
+  } catch(e){}
+}
+
+/* >>> END PATCH <<< */
 
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', () => { init(); });
